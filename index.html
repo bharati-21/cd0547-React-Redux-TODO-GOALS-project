@@ -100,6 +100,24 @@
 				}
 			}
 
+			function checkAndDispatch(store, action) {
+				if (
+					action.type === ADD_TODO &&
+					action.todo.name.toLowerCase().includes("bitcoin")
+				) {
+					return alert("Nope, bad idea!");
+				}
+
+				if (
+					action.type === ADD_GOAL &&
+					action.goal.name.toLowerCase().includes("bitcoin")
+				) {
+					return alert("Nope, bad idea!");
+				}
+
+				return store.dispatch(action);
+			}
+
 			const store = Redux.createStore(
 				Redux.combineReducers({
 					todos,
@@ -131,7 +149,7 @@
 					name,
 					complete: false,
 				};
-				store.dispatch(addTodoAction(todo));
+				checkAndDispatch(store, addTodoAction(todo));
 			}
 
 			function addGoal() {
@@ -143,7 +161,7 @@
 					id: generateId(),
 					name,
 				};
-				store.dispatch(addGoalAction(goal));
+				checkAndDispatch(store, addGoalAction(goal));
 			}
 
 			function createRemoveButton(onClick) {
@@ -159,7 +177,7 @@
 				const todoItem = document.createElement("li");
 				const todoItemText = document.createTextNode(todo.name);
 				const removeBtn = createRemoveButton(() => {
-					store.dispatch(removeTodoAction(todo.id));
+					checkAndDispatch(store, removeTodoAction(todo.id));
 				});
 
 				todoItem.appendChild(todoItemText);
@@ -169,7 +187,7 @@
 					: "none";
 
 				todoItem.addEventListener("click", () => {
-					store.dispatch(toggleTodoAction(todo.id));
+					checkAndDispatch(store, toggleTodoAction(todo.id));
 				});
 
 				const todos = document.getElementById("todos");
@@ -180,7 +198,7 @@
 				const goalItem = document.createElement("li");
 				const goalItemText = document.createTextNode(goal.name);
 				const removeBtn = createRemoveButton(() => {
-					store.dispatch(removeGoalAction(goal.id));
+					checkAndDispatch(store, removeGoalAction(goal.id));
 				});
 
 				goalItem.appendChild(goalItemText);
