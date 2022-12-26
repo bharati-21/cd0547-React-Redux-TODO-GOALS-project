@@ -29,6 +29,7 @@
 			const REMOVE_GOAL = "REMOVE_GOAL";
 			const RECEIVE_DATA = "RECEIVE_DATA";
 			const LOADING_DATA = "LOADING_DATA";
+			const INITAL_LOADING_STATE = { loading: true, error: null };
 
 			// action creators
 			const addTodoAction = (todo) => {
@@ -116,7 +117,7 @@
 				}
 			}
 
-			function loading(state = { loading: true, error: null }, action) {
+			function loading(state = INITAL_LOADING_STATE, action) {
 				switch (action.type) {
 					case LOADING_DATA:
 						return {
