@@ -193,23 +193,34 @@
 				const inputRef = React.useRef();
 				const addItem = (e) => {
 					e.preventDefault();
-
 					const name = inputRef.current.value;
-					inputRef.current.value = "";
-					const todo = {
-						name,
-						id: generateId(),
-						complete: false,
-					};
-					store.dispatch(addTodoAction(todo));
+
+					return API.saveTodo(name)
+						.then((todo) => {
+							store.dispatch(addTodoAction(todo));
+							inputRef.current.value = "";
+						})
+						.catch((error) => {
+							alert("There was an error. Please try again.");
+						});
 				};
 
 				const removeTodo = (todo) => {
 					store.dispatch(removeTodoAction(todo.id));
+					return API.deleteTodo(todo.id).catch((err) => {
+						alert("Error occurred while deleting");
+						store.dispatch(addTodoAction(todo));
+					});
 				};
 
 				const toggleTodo = (todo) => {
 					store.dispatch(toggleTodoAction(todo.id));
+					return API.saveTodoToggle(todo.id).catch((err) => {
+						alert(
+							"Error occurred while toggling todo item. Please try again."
+						);
+						store.dispatch(toggleTodoAction(todo.id));
+					});
 				};
 
 				return (
@@ -236,16 +247,23 @@
 					e.preventDefault();
 
 					const name = inputRef.current.value;
-					inputRef.current.value = "";
-					const goal = {
-						name,
-						id: generateId(),
-					};
-					store.dispatch(addGoalAction(goal));
+
+					return API.saveGoal(name)
+						.then((goal) => {
+							store.dispatch(addGoalAction(goal));
+							inputRef.current.value = "";
+						})
+						.catch((error) => {
+							alert("There was an error. Please try again.");
+						});
 				};
 
 				const removeGoal = (goal) => {
 					store.dispatch(removeGoalAction(goal.id));
+					return API.deleteGoal(goal.id).catch((err) => {
+						alert("Error occurred while deleting");
+						store.dispatch(addGoalAction(goal));
+					});
 				};
 
 				return (
