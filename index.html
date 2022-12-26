@@ -27,6 +27,8 @@
 			const TOGGLE_TODO = "TOGGLE_TODO";
 			const ADD_GOAL = "ADD_GOAL";
 			const REMOVE_GOAL = "REMOVE_GOAL";
+			const RECEIVE_DATA = "RECEIVE_DATA";
+			const LOADING_DATA = "LOADING_DATA";
 
 			// action creators
 			const addTodoAction = (todo) => {
@@ -64,6 +66,22 @@
 				};
 			};
 
+			const receiveDataAction = (todos, goals) => {
+				return {
+					type: RECEIVE_DATA,
+					todos,
+					goals,
+				};
+			};
+
+			const loadingDataAction = (loading, error) => {
+				return {
+					type: LOADING_DATA,
+					loading,
+					error,
+				};
+			};
+
 			// app code
 			// reducer
 			function todos(state = [], action) {
@@ -78,6 +96,8 @@
 								? { ...item, complete: !item.complete }
 								: item
 						);
+					case RECEIVE_DATA:
+						return action.todos;
 					default:
 						return state;
 				}
@@ -89,6 +109,20 @@
 						return state.concat([action.goal]);
 					case REMOVE_GOAL:
 						return state.filter((item) => item.id !== action.id);
+					case RECEIVE_DATA:
+						return action.goals;
+					default:
+						return state;
+				}
+			}
+
+			function loading(state = { loading: true, error: null }, action) {
+				switch (action.type) {
+					case LOADING_DATA:
+						return {
+							loading: action.loading,
+							error: action.error,
+						};
 					default:
 						return state;
 				}
@@ -125,92 +159,10 @@
 				Redux.combineReducers({
 					todos,
 					goals,
+					loading,
 				}),
 				Redux.applyMiddleware(checker, logger)
 			);
-
-			store.subscribe(() => {
-				const { goals, todos } = store.getState();
-				document.getElementById("goals").innerHTML = "";
-				document.getElementById("todos").innerHTML = "";
-				goals.forEach(addGoalToDOM);
-				todos.forEach(addTodoToDOM);
-			});
-
-			const todoBtn = document.getElementById("todoBtn");
-			const goalBtn = document.getElementById("goalBtn");
-
-			todoBtn.addEventListener("click", addTodo);
-			goalBtn.addEventListener("click", addGoal);
-
-			function addTodo() {
-				const inputTodo = document.getElementById("todo");
-				const name = inputTodo.value;
-				inputTodo.value = "";
-
-				const todo = {
-					id: generateId(),
-					name,
-					complete: false,
-				};
-				store.dispatch(addTodoAction(todo));
-			}
-
-			function addGoal() {
-				const inputGoal = document.getElementById("goal");
-				const name = inputGoal.value;
-				inputGoal.value = "";
-
-				const goal = {
-					id: generateId(),
-					name,
-				};
-				store.dispatch(addGoalAction(goal));
-			}
-
-			function createRemoveButton(onClick) {
-				const removeBtn = document.createElement("button");
-				removeBtn.innerHTML = "X";
-
-				removeBtn.addEventListener("click", onClick);
-
-				return removeBtn;
-			}
-
-			function addTodoToDOM(todo) {
-				const todoItem = document.createElement("li");
-				const todoItemText = document.createTextNode(todo.name);
-				const removeBtn = createRemoveButton(() => {
-					store.dispatch(removeTodoAction(todo.id));
-				});
-
-				todoItem.appendChild(todoItemText);
-				todoItem.appendChild(removeBtn);
-				todoItem.style.textDecoration = todo.complete
-					? "line-through"
-					: "none";
-
-				todoItem.addEventListener("click", () => {
-					store.dispatch(toggleTodoAction(todo.id));
-				});
-
-				const todos = document.getElementById("todos");
-				todos.appendChild(todoItem);
-			}
-
-			function addGoalToDOM(goal) {
-				const goalItem = document.createElement("li");
-				const goalItemText = document.createTextNode(goal.name);
-				const removeBtn = createRemoveButton(() => {
-					store.dispatch(removeGoalAction(goal.id));
-				});
-
-				goalItem.appendChild(goalItemText);
-				goalItem.appendChild(removeBtn);
-
-				const goals = document.getElementById("goals");
-				goals.appendChild(goalItem);
-			}
 		</script>
 
 		<script type="text/babel">
@@ -318,29 +270,36 @@
 				const [value, setValue] = React.useState(0);
 
 				React.useEffect(() => {
+					const fetchTodosGoals = async () => {
+						Promise.all([API.fetchTodos(), API.fetchGoals()])
+							.then(([todos, goals]) => {
+								store.dispatch(receiveDataAction(todos, goals));
+								store.dispatch(loadingDataAction(false, null));
+							})
+							.catch((err) => {
+								store.dispatch(loadingDataAction(false, err));
+							});
+					};
+
+					store.dispatch(loadingDataAction(true, null));
+					fetchTodosGoals();
+
 					store.subscribe(() => {
 						setValue((prevValue) => prevValue + 1);
 					});
 				}, []);
 
-				React.useEffect(() => {
-					const fetchTodos = async () => {
-						const res = await API.fetchTodos();
-						console.log(res);
-					};
+				const {
+					todos,
+					goals,
+					loading: { loading, error },
+				} = store.getState();
 
-					const fetchGoals = async () => {
-						const res = await API.fetchGoals();
-						console.log(res);
-					};
-
-					fetchTodos();
-					fetchGoals();
-				}, []);
-
-				const { todos, goals } = store.getState();
-
-				return (
+				return error ? (
+					<div>Error occurred! Could not load data!</div>
+				) : loading ? (
+					<div>Loading data...</div>
+				) : (
 					<div>
 						<Todos store={store} todos={todos} />
 						<Goals store={store} goals={goals} />
