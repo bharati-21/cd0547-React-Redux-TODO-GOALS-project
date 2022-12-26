@@ -28,8 +28,6 @@
 			const ADD_GOAL = "ADD_GOAL";
 			const REMOVE_GOAL = "REMOVE_GOAL";
 			const RECEIVE_DATA = "RECEIVE_DATA";
-			const LOADING_DATA = "LOADING_DATA";
-			const INITAL_LOADING_STATE = { loading: true, error: null };
 
 			// action creators
 			const addTodoAction = (todo) => {
@@ -117,13 +115,10 @@
 				}
 			}
 
-			function loading(state = INITAL_LOADING_STATE, action) {
+			function loading(state = true, action) {
 				switch (action.type) {
-					case LOADING_DATA:
-						return {
-							loading: action.loading,
-							error: action.error,
-						};
+					case RECEIVE_DATA:
+						return false;
 					default:
 						return state;
 				}
@@ -271,35 +266,21 @@
 				const [value, setValue] = React.useState(0);
 
 				React.useEffect(() => {
-					const fetchTodosGoals = async () => {
-						Promise.all([API.fetchTodos(), API.fetchGoals()])
-							.then(([todos, goals]) => {
-								store.dispatch(receiveDataAction(todos, goals));
-								store.dispatch(loadingDataAction(false, null));
-							})
-							.catch((err) => {
-								store.dispatch(loadingDataAction(false, err));
-							});
-					};
-
-					store.dispatch(loadingDataAction(true, null));
-					fetchTodosGoals();
+					Promise.all([API.fetchTodos(), API.fetchGoals()]).then(
+						([todos, goals]) => {
+							store.dispatch(receiveDataAction(todos, goals));
+						}
+					);
 
 					store.subscribe(() => {
 						setValue((prevValue) => prevValue + 1);
 					});
 				}, []);
 
-				const {
-					todos,
-					goals,
-					loading: { loading, error },
-				} = store.getState();
+				const { todos, goals, loading } = store.getState();
 
-				return error ? (
-					<div>Error occurred! Could not load data!</div>
-				) : loading ? (
-					<div>Loading data...</div>
+				return loading ? (
+					<h3>Loading data...</h3>
 				) : (
 					<div>
 						<Todos store={store} todos={todos} />
